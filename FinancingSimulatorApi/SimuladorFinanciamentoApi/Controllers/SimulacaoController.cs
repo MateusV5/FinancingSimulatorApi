@@ -17,6 +17,7 @@ namespace SimuladorFinanciamentoApi.Controllers
             _simuladorService = simuladorService;
             _simulacaoService = simulacaoService;
         }
+        [Authorize]
         [HttpPost]
         public IActionResult Simular(SimulacaoRequestDto request)
         {
