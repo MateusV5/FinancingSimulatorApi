@@ -19,10 +19,18 @@ builder.Services.AddScoped<PriceService>();
 builder.Services.AddScoped<LoginService>();
 builder.Services.AddScoped<TokenService>();
 
-//DbContext
-builder.Services.AddDbContext<AppDbContext> (options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
-);
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+if (!string.IsNullOrWhiteSpace(connectionString) && connectionString.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseSqlite(connectionString));
+}
+else
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseNpgsql(connectionString ?? "Host=localhost;Port=5432;Database=SimuladorDb;Username=postgres;Password=postgres"));
+}
 
 // Configuração do Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -63,6 +71,12 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.EnsureCreated();
+}
 
 // HTTPS
 app.UseHttpsRedirection();
